@@ -1,91 +1,284 @@
-<style>
- @import url('https://fonts.googleapis.com/css2?family=Monda&display=swap');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Adventure Quest</title>
+    <style>
+        :root {
+            --bg-color: #000;
+            --text-color: #ffffff;
+            --accent-color: #3498db;
+            --font-main: "Lucida Console", Monaco, monospace;
+        }
 
- body{
-    background:#FFE9FA;
-    font-family:Monda;
-    font-size:1em;
-    text-align:center;
-   padding: 6em;
-  }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-div.title{
-  height: 10em;
-}
+        body, html {
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            display: flex;
+            justify-content: center;
+        }
 
-div.info{
-  height: 32em;
-  margin-left: 30%;
-  text-align:left;
-}
-  
-  .copyleft {
-  display:inline-block;
-  transform: rotate(0deg);
-     font-size:1em;
-}
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            /* This ensures the UI width matches the image container */
+            width: 100%;
+            max-width: 600px; 
+            margin: 0 auto;
+            transition: opacity 0.8s ease-in-out;
+        }
 
-</style>
+        #image-viewer {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            width: 100%;
+        }
 
+        #game-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
 
+        #ui-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background: #1a1a1a;
+            border-top: 4px solid var(--accent-color);
+            width: 100%;
+        }
 
+        #question-text {
+            color: var(--text-color);
+            font-size: 1.8rem; /* Large as requested */
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 4em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+        }
 
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 12px;
+            flex-grow: 1;
+            padding-bottom: 10px;
+        }
+
+        .game-btn {
+            background-color: #333;
+            border: 3px solid var(--accent-color);
+            color: white;
+            font-family: var(--font-main);
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-wrap: break-word;
+            transition: transform 0.1s;
+        }
+
+        .btn-label {
+            font-weight: bold;
+            color: var(--accent-color);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+            100% { transform: translateX(0); }
+        }
+
+        .effect-shake {
+            animation: shake 0.3s ease-in-out;
+            background-color: #600 !important;
+        }
+
+        @keyframes sparkle {
+            0% { background-color: #333; box-shadow: 0 0 0px #fff; }
+            50% { background-color: #fff; box-shadow: 0 0 40px #fff; color: #000; }
+            100% { background-color: #333; box-shadow: 0 0 0px #fff; }
+        }
+
+        .effect-sparkle {
+            animation: sparkle 0.6s ease-in-out;
+            z-index: 10;
+        }
+    </style>
+</head>
 <body>
-  
-  <div class=title>
-   <h3>
-GAME NIGHT
-    <p>
-      At The Pera's Party House
-   </h3>
-  </div>
-  
-  <div class=info>
-     <b>WHAT:  </b> (please bring one)
-    <br>
-     Party Games
-      <br>
-   Board Games
-      <br>
-      Snacks 
-      <p>
-   
-   <b>WHEN:</b>
-    <br>
-      Friday, March 12, 2021
-      <br>
-      6pm - 9pm
-      <p>
+
+<div class="game-container" id="stage">
+    <div id="image-viewer">
+        <img id="game-img" src="start.png">
+    </div>
+
+    <div id="ui-panel">
+        <div id="question-text"></div>
+        <div class="button-grid">
+            <button class="game-btn" id="btnA" onclick="handleInput('A')"><span class="btn-label">(A)</span><span class="text"></span></button>
+            <button class="game-btn" id="btnB" onclick="handleInput('B')"><span class="btn-label">(B)</span><span class="text"></span></button>
+            <button class="game-btn" id="btnX" onclick="handleInput('X')"><span class="btn-label">(X)</span><span class="text"></span></button>
+            <button class="game-btn" id="btnY" onclick="handleInput('Y')"><span class="btn-label">(Y)</span><span class="text"></span></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentState = "START";
+
+    const gameData = {
+        "START": {
+            img: "start.png",
+            text: "Start?",
+            buttons: {
+                A: { label: "Yes", next: "SCENE_1" },
+                B: { label: "No", next: null },
+                X: { label: "-", next: null },
+                Y: { label: "-", next: null }
+            }
+        },
+        "SCENE_1": {
+            img: "1.png",
+            text: "Which direction will you venture?",
+            buttons: {
+                A: { label: "South into the depressing city.", next: "OVER" },
+                B: { label: "North up the mysterious path.", next: "SCENE_2" },
+                X: { label: "West towards the deadly Larkins.", next: "OVER" },
+                Y: { label: "East crossing the wild rapids.", next: "OVER" }
+            }
+        },
+        "SCENE_2": {
+            img: "2.png",
+            text: "Do you dare climb the steps into the dark chambers?",
+            buttons: {
+                A: { label: "No, I don't dare, I'm going to run away.", next: "OVER" },
+                B: { label: "I'd rather nap, honestly.", next: "OVER" },
+                X: { label: "Uuw! Look at that shiny fish!", next: "OVER" },
+                Y: { label: "I dare.", next: "SCENE_3" }
+            }
+        },
+        "SCENE_3": {
+            img: "3.png",
+            text: "Does your heart desire...",
+            buttons: {
+                A: { label: "To go home", next: "OVER" },
+                B: { label: "To smack these weird ghosts that are following me", next: "OVER" },
+                X: { label: "Star Power!", next: "SCENE_4" },
+                Y: { label: "Honestly? I really wanna nap!", next: "OVER" }
+            }
+        },
+        "SCENE_4": {
+            img: "4.png",
+            text: "A huge crushing sound comes from a nearby stone wall and you hear massive stomping coming closer. You turn around and see a dangerous foe. How will you defeat this boss?",
+            buttons: {
+                A: { label: "Can we be honest? ...is napping an option?", next: "OVER" },
+                B: { label: "Inhale all three yellow power ghosts and blow a stunning tornado into the Rock Spider's eyes.", next: "WIN" },
+                X: { label: "Run up the walls behind and come crashing down with the edge of your sharp shield on the Rock Spider's neck.", next: "OVER" },
+                Y: { label: "Grab the Power Star and fly away, up and out the top of the chamber!", next: "OVER" }
+            }
+        },
+        "WIN": {
+            img: "5.png",
+            text: "You win! You got yourself some Star Power. Play again?",
+            buttons: {
+                A: { label: "Yes.", next: "START" },
+                B: { label: "-", next: null },
+                X: { label: "-", next: null },
+                Y: { label: "-", next: null }
+            }
+        },
+        "OVER": {
+            img: "over.png",
+            text: "Continue?",
+            buttons: {
+                A: { label: "Yes.", next: "START" },
+                B: { label: "-", next: null },
+                X: { label: "-", next: null },
+                Y: { label: "-", next: null }
+            }
+        }
+    };
+
+    function updateUI() {
+        const scene = gameData[currentState];
+        const stage = document.getElementById("stage");
         
-        <b>WHERE:</b>
-        <br>
-        Pera's House
-        <br>
-        35149 Acacia Ave
-        <br>
-        Yucaipa CA 
-        <br>
-       <a href="https://goo.gl/maps/VyoxNFUcmx56KPo38"> Google Maps</a>
-      <p>
-      
-      <b> WHO:</b>
-        <br>
-        You ♥
-        <br>
-        Oh, we do have two cats
-        <p>
-        
-          <b>PARKING and ENTRANCE:</b>
-  </div>
-  
-  <img src="parking2.jpg" alt="">
-  <p>
-    
-  <img src="entrance2.jpg" alt="">
-    <p>
-      
-  <hr>
-<span class="copyleft">&copy; 2021
-  </span>
-  
+        document.getElementById("game-img").src = scene.img;
+        document.getElementById("question-text").innerText = scene.text;
+        stage.style.opacity = "1";
+
+        ['A', 'B', 'X', 'Y'].forEach(key => {
+            const btn = document.getElementById("btn" + key);
+            const textSpan = btn.querySelector(".text");
+            const data = scene.buttons[key];
+            
+            btn.className = "game-btn"; // Reset effects
+            textSpan.innerText = data.label;
+            btn.disabled = (data.next === null);
+
+            // Dynamic Font Sizing
+            const len = data.label.length;
+            if (len > 60) {
+                btn.style.fontSize = "0.75rem";
+            } else if (len > 30) {
+                btn.style.fontSize = "0.9rem";
+            } else {
+                btn.style.fontSize = "1.2rem";
+            }
+        });
+    }
+
+    function handleInput(key) {
+        const btn = document.getElementById("btn" + key);
+        const nextState = gameData[currentState].buttons[key].next;
+
+        if (nextState === "OVER") {
+            btn.classList.add("effect-shake");
+            setTimeout(() => {
+                document.getElementById("stage").style.opacity = "0";
+                setTimeout(() => { currentState = nextState; updateUI(); }, 200);
+            }, 400);
+        } else {
+            btn.classList.add("effect-sparkle");
+            setTimeout(() => {
+                document.getElementById("stage").style.opacity = "0";
+                setTimeout(() => { currentState = nextState; updateUI(); }, 800);
+            }, 600);
+        }
+    }
+
+    window.onload = updateUI;
+</script>
+
 </body>
+</html>
